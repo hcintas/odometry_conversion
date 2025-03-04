@@ -30,13 +30,14 @@ OdometryConversion::OdometryConversion(const rclcpp::NodeOptions & options)
   this->get_parameter("is_odom_child", odomChild_);
 
   // Lookup initial transforms
-  auto sensorTransform = buffer_.lookupTransform(outBaseFrame_, inSensorFrame_, tf2::TimePointZero);
+  auto sensorTransform = buffer_.lookupTransform(outBaseFrame_, inSensorFrame_, rclcpp::Time(0), rclcpp::Duration(10, 0));
   sensorTransformHom_ = toHomTransform(sensorTransform.transform);
 
-  auto odomTransform = buffer_.lookupTransform(outBaseFrame_, inOdomFrame_, tf2::TimePointZero);
+  auto odomTransform = buffer_.lookupTransform(outBaseFrame_, inOdomFrame_, rclcpp::Time(0), rclcpp::Duration(10, 0));
   odomTransformHom_ = toHomTransform(odomTransform.transform);
 
   // Subscribers and Publishers
+  odomPublisher_ = std::make_shared<tf2_ros::TransformBroadcaster>(this);
   odometryPublisher_ = this->create_publisher<nav_msgs::msg::Odometry>(outOdomTopic_, 10);
   odometryInSubscriber_ = this->create_subscription<nav_msgs::msg::Odometry>(
     inOdomTopic_, 10, std::bind(&OdometryConversion::odometryInCallback, this, std::placeholders::_1)
